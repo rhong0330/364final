@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+<h1>Register Success</h1>
+
+{% block content %}
+
+<img src="{{ user_image }}" onError="this.style.visibility = 'hidden'" alt="User Image"
+style="
+width:  300px;">
+    
+    <div>
+        {% for message in get_flashed_messages() %}
+        {{ message }}
+        {% endfor %}
+    </div>
+{% endblock %}
+    
+    

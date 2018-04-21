@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Register</h1>
+
+
+<form action="" method="POST" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    {{ form.user.label }} {{ form.user() }}<br>
+    {{ form.face.label }} {{ form.face() }}<br>
+    {{ form.submit() }}<br>
+</form>
+
+<div>
+    {% for message in get_flashed_messages() %}
+    {{ message }}
+    {% endfor %}
+</div>
+{% endblock %}
+
+

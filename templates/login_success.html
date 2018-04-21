@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Login Success</h1>
+
+
+<p style="
+width: 300px;
+display:  inline-block;
+text-align:  center;
+">SAVED IMAGE</p>
+<p style="
+display:  inline-block;
+text-align:  center;
+width:  300px;
+margin-left:  10px;
+">COMPARED IMAGE</p>
+
+<img src={{source_image}} onerror="this.style.visibility = 'hidden'" alt="Source Image" style="
+    width:  300px;
+    float:  left;
+    ">
+    
+<img src={{target_image}} onerror="this.style.visibility = 'hidden'" alt="Target Image" style="
+    float: left;
+    width: 300px;
+    margin-left:  10px;
+    ">
+    
+<li style="
+    clear:  both;
+    padding: 20px;
+    ">passeded with <strong>{{similarity}}%</strong>similarity</li>
+<div>
+    {% for message in get_flashed_messages() %}
+    {{ message }}
+    {% endfor %}
+</div>
+<a href="{{ url_for('index') }}">Home</a><br>
+{% endblock %}
+    

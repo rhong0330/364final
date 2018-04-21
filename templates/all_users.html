@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<ul style = "list-style:none;">
+{% for nm in all_users %}
+<div style="
+    border: 2px solid #000;
+    width: 300px;
+    padding: 30px;
+    background: #fffaf2;
+    margin-bottom: 20px;
+    ">
+    <li><p style="
+    width: 300px;
+    display:  inline-block;
+    text-align:  center;
+    ">{{nm[0]}}</p></li>
+    <li><img src="uploads/{{nm[1]}}" onError="this.style.visibility = 'hidden'" alt="User Image"
+          style="
+          width:  300px;"></li>
+</div>
+{% endfor %}
+</ul>
+
+{% if not all_users %}
+    There are no users to show.
+{% endif %}
+
+{% endblock %}
