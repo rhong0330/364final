@@ -39,8 +39,11 @@ $ sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
 *https://docs.aws.amazon.com/cli/latest/userguide/cli-environment.html*
 
 6. **export following to the terminal**
-$ export AWS_ACCESS_KEY_ID=AKIAIEGNXXLRDCV4PHMA
-$ export AWS_SECRET_ACCESS_KEY=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
+
+$ export AWS_ACCESS_KEY_ID=AKIAJWP7X7C7N5UGLPAA
+
+$ export AWS_SECRET_ACCESS_KEY=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
+
 $ export AWS_DEFAULT_REGION=us-east-2
 
 *currently on the free trial on Amazon Rekognition but these keys will be unavailable once the project is graded for it's paid*
