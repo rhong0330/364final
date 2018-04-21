@@ -30,6 +30,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://localhost/SI364projectplan
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['HEROKU_ON'] = os.environ.get('HEROKU')
 
 # Set up Flask debug and necessary additions to app
 manager = Manager(app)
