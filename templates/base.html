@@ -9,4 +9,14 @@
     <li><a href="{{ url_for('index')}}">Home</a></li>
     <li><a href="{{ url_for('add_users')}}">Register user</a></li>
     <li><a href="{{ url_for('all_users')}}">See all users.</a></li>
+    
+    {% if current_user.is_authenticated %}
+    <li><a href="{{ url_for('search') }}">Get information about a photo</a></li>
+    <li><a href="{{ url_for('logout') }}">Sign Out {{current_user.name}}</a></li>
+    {% else %}
+    <a href="{{ url_for('index') }}">Sign In</a>
+    {% endif %}
+
 </ul>
+
+

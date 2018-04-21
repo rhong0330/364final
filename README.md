@@ -39,12 +39,7 @@ $ sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
 *https://docs.aws.amazon.com/cli/latest/userguide/cli-environment.html*
 
 6. **export following to the terminal**
-
-$ export AWS_ACCESS_KEY_ID=AKIAJWP7X7C7N5UGLPAA
-
-$ export AWS_SECRET_ACCESS_KEY=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
-
-$ export AWS_DEFAULT_REGION=us-east-2
+export settings not for public
 
 *currently on the free trial on Amazon Rekognition but these keys will be unavailable once the project is graded for it's paid*
 
@@ -54,12 +49,17 @@ $ export AWS_DEFAULT_REGION=us-east-2
 3. Once a user is registered, user can login on homepage with the same or similar image that was saved during the process of registration.
 4. To view all users with face, click all users at homepage.
 
+**FOR LOGGED IN USERS ONLY**
+1. A user can get information on an uploaded file
+2. A user can save searched information as a collection
+
 
 ### **List of all of the routes**
 http://localhost:5000/ -> index.html
 http://localhost:5000/addUser -> add_user.html
 http://localhost:5000/regSuccess -> register_success.html
 http://localhost:5000/allUsers -> all_users.html
+http://localhost:5000/uploads/<filename> , For checking if file upload is successful
 
 
 ### **Documentation README Requirements**
@@ -89,13 +89,13 @@ http://localhost:5000/allUsers -> all_users.html
 
 - [*] Must use user authentication (which should be based on the code you were provided to do this e.g. in HW4).
 
-- [ ] Must have data associated with a user and at least 2 routes besides `logout` that can only be seen by logged-in users.
+- [*] Must have data associated with a user and at least 2 routes besides `logout` that can only be seen by logged-in users.
 
-- [ ] At least 3 model classes *besides* the `User` class.
+- [*] At least 3 model classes *besides* the `User` class.
 
-- [ ] At least one one:many relationship that works properly built between 2 models.
+- [*] At least one one:many relationship that works properly built between 2 models.
 
-- [ ] At least one many:many relationship that works properly built between 2 models.
+- [*] At least one many:many relationship that works properly built between 2 models.
 
 - [*] Successfully save data to each table.
 
@@ -107,7 +107,7 @@ http://localhost:5000/allUsers -> all_users.html
 
 - [*] At least one helper function that is *not* a `get_or_create` function should be defined and invoked in the application.
 
-- [] At least two `get_or_create` functions should be defined and invoked in the application (such that information can be saved without being duplicated / encountering errors).
+- [*] At least two `get_or_create` functions should be defined and invoked in the application (such that information can be saved without being duplicated / encountering errors).
 
 - [*] At least one error handler for a 404 error and a corresponding template.
 
@@ -115,7 +115,7 @@ http://localhost:5000/allUsers -> all_users.html
 
 - [*] Include at least 4 template `.html` files in addition to the error handling template files.
 
-- [ ] At least one Jinja template for loop and at least two Jinja template conditionals should occur amongst the templates.
+- [] At least one Jinja template for loop and at least two Jinja template conditionals should occur amongst the templates.
 
 - [*] At least one request to a REST API that is based on data submitted in a WTForm OR data accessed in another way online (e.g. scraping with BeautifulSoup that *does* accord with other involved sites' Terms of Service, etc).
 
@@ -137,7 +137,7 @@ http://localhost:5000/allUsers -> all_users.html
 
 - [*] Include at least two uses of `url_for`. (HINT: Likely you'll need to use this several times, really.)
 
-- [ ] Have at least 5 view functions that are not included with the code we have provided. (But you may have more! *Make sure you include ALL view functions in the app in the documentation and navigation as instructed above.*)
+- [*] Have at least 5 view functions that are not included with the code we have provided. (But you may have more! *Make sure you include ALL view functions in the app in the documentation and navigation as instructed above.*)
 
 
 ## Additional Requirements for additional points -- an app with extra functionality!
@@ -145,7 +145,7 @@ http://localhost:5000/allUsers -> all_users.html
 **Note:** Maximum possible % is 102%.
 
 - [ ] (100 points) Include a use of an AJAX request in your application that accesses and displays useful (for use of your application) data.
-- [ ]  (100 points) Create, run, and commit at least one migration.
+- [*]  (100 points) Create, run, and commit at least one migration.
 - [*] (100 points) Include file upload in your application and save/use the results of the file. (We did not explicitly learn this in class, but there is information available about it both online and in the Grinberg book.)
 - [ ]  (100 points) Deploy the application to the internet (Heroku) — only counts if it is up when we grade / you can show proof it is up at a URL and tell us what the URL is in the README. (Heroku deployment as we taught you is 100% free so this will not cost anything.)
 - [ ]  (100 points) Implement user sign-in with OAuth (from any other service), and include that you need a *specific-service* account in the README, in the same section as the list of modules that must be installed.

@@ -9,12 +9,14 @@ from flask_script import Manager, Shell
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired
 from werkzeug.utils import secure_filename
-from wtforms import StringField, SubmitField, ValidationError # Note that you may need to import more here! Check out examples that do what you want to figure out what.
+from wtforms import SelectMultipleField,BooleanField, StringField, SubmitField, ValidationError # Note that you may need to import more here! Check out examples that do what you want to figure out what.
 from wtforms.validators import Required, Length # Here, too
 from flask_migrate import Migrate, MigrateCommand
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# Imports for login management
+from flask_login import LoginManager, login_required, logout_user, login_user, UserMixin, current_user
 UPLOAD_FOLDER = 'uploads'
 
 ## App setup code
@@ -29,9 +31,36 @@ app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-## Statements for db setup (and manager setup if using Manager)
-db = SQLAlchemy(app)
+# Set up Flask debug and necessary additions to app
+manager = Manager(app)
+db = SQLAlchemy(app) # For database use
+migrate = Migrate(app, db) # For database use/updating
+manager.add_command('db', MigrateCommand) # Add migrate command to manager
 
+# Login configurations setup
+login_manager = LoginManager()
+login_manager.session_protection = 'strong'
+login_manager.login_view = 'login'
+login_manager.init_app(app) # set up login manager
+
+
+## Set up Shell context so it's easy to use the shell to debug
+# Define function
+def make_shell_context():
+    return dict( app=app, db=db)
+# Add function use to manager
+manager.add_command("shell", Shell(make_context=make_shell_context))
+
+## NOTE ON MIGRATION SETUP
+## You will get the following message when running command to create migration folder, e.g.:
+## python main_app.py db init
+## -->
+# Please edit configuration/connection/logging settings in ' ... migrations/alembic.ini' before proceeding
+## This is what you are supposed to see!
+
+#########
+######### Everything above this line is important/useful setup, not mostly application-specific problem-solving.
+#########
 
 ######################################
 ######## HELPER FXNS (If any) ########
@@ -66,40 +95,115 @@ def face_detect(imageFile1, imageFile2):
         return str(faceMatch['Similarity'])
     return "0"
 
+def image_detect(imageFile):
+    image = open(imageFile, 'rb')
+    client=boto3.client('rekognition','us-east-2')
+    response = client.detect_labels(
+                                    Image={'Bytes': image.read()},
+                                    MaxLabels=20,
+                                    MinConfidence=70
+                                    )
+    return response['Labels']
 
-def get_face(db_session,user_name):
-    pass
+def get_article_by_id(id):
+    """returns article or None"""
+    article_obj = Article.query.filter_by(id=id).first()
+    return article_obj
 
-def create_face(db_session, face_id):
-    pass
+def get_or_create_search(db_session, f):
+    filename = f.filename
+    searchTerm = db_session.query(Search).filter_by(term=filename).first()
+    if searchTerm:
+        print("Found term")
+        return searchTerm
+    else:
+        print("Added term")
+        full_filename = os.path.join(app.config['UPLOAD_FOLDER'],secure_filename(filename))
+        f.save(full_filename)
+        result_list = image_detect(full_filename)
+        searchTerm = Search(term=filename)
+        for label in result_list:
+            output = label['Name'] + " : " + str(label['Confidence']) + "%\n"
+            flash (output)
+            result = get_or_create_result(db_session, filename, label['Name'], str(label['Confidence']))
+            searchTerm.results.append(result)
+        db_session.add(searchTerm)
+        db_session.commit()
+        return searchTerm
 
-def get_pin():
-    pass
+def get_or_create_result(db_session, term_in, key_in, value_in):
+    result = db_session.query(Result).filter_by(term = term_in, key = key_in, value = value_in).first()
+    if result:
+        return result
+    else:
+        result = Result(term = term_in, key = key_in, value = value_in)
+        db_session.add(result)
+        db_session.commit()
+        return result
 
-def create_pin():
-    pass
-
+def get_or_create_personal_collection(db_session, name, article_list, current_user):
+    articleCollection = db_session.query(PersonalCollection).filter_by(name=name,user_id=current_user.id).first()
+    if articleCollection:
+        return articleCollection
+    else:
+        articleCollection = PersonalCollection(name=name,user_id=current_user.id,articles=[])
+        for a in article_list:
+            articleCollection.articles.append(a)
+        db_session.add(articleCollection)
+        db_session.commit()
+        return articleCollection
 
 ##################
 ##### MODELS #####
 ##################
 
-class User(db.Model):
+# Set up association Table between Articles and collections prepared by user
+tags = db.Table('tags',db.Column('search_id',db.Integer, db.ForeignKey('search.id')),db.Column('result_id',db.Integer, db.ForeignKey('results.id')))
+
+user_collection = db.Table('user_collection',db.Column('user_id', db.Integer, db.ForeignKey('results.id')),db.Column('collection_id',db.Integer, db.ForeignKey('personalCollections.id')))
+
+
+class User(UserMixin, db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer,primary_key=True)
-    user = db.Column(db.String(256)) #, unique=True)
-    face = db.Column(db.String(256)) #, unique=True)
+    user = db.Column(db.String(256), unique=True)
+    face = db.Column(db.String(256), unique=True)
+    collection = db.relationship('PersonalCollection', backref='User')
     #pin = db.Column(db.Integer)
     def __repr__(self):
         return "{} {}".format(self.id, self.user)
 
-class Pin(db.Model):
-    __tablename__ = "pins"
-    id = db.Column(db.Integer,primary_key=True)
-    number = db.Column(db.Integer)
-    def __repr__(self):
-        return "{} {}".format(self.id, self.number)
+class PersonalCollection(db.Model):
+    __tablename__ = "personalCollections"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255))
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    results = db.relationship('Result',secondary=user_collection,backref=db.backref('personalCollections',lazy='dynamic'),lazy='dynamic')
 
+class Result(db.Model):
+    __tablename__ = "results"
+    id = db.Column(db.Integer, primary_key=True)
+    term = db.Column(db.String(256))
+    key = db.Column(db.String(128))
+    value = db.Column(db.String(256))
+    def __repr__(self):
+        return "{}, {}, Confidence: {}".format(self.term, self.key,self.value)
+
+
+class Search(db.Model):
+    __tablename__ = "search"
+    id = db.Column(db.Integer, primary_key=True)
+    term = db.Column(db.String(256),unique=True) # Only unique searches
+    results = db.relationship('Result',secondary=tags,backref=db.backref('search',lazy='dynamic'),lazy='dynamic')
+    
+    def __repr__(self):
+        return "{} : {}".format(self.id, self.term)
+
+
+## DB load functions
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id)) # returns User object or None
 
 ###################
 ###### FORMS ######
@@ -107,9 +211,18 @@ class Pin(db.Model):
 class UserForm(FlaskForm):
     user = StringField("Please enter your username.",validators=[Required()])
     face = FileField("Insert a photo with your face",validators=[FileRequired()])
+    remember_me = BooleanField('Keep me logged in')
     submit = SubmitField()
 
-#more to be done
+class SearchForm(FlaskForm):
+    search = FileField("Insert a photo you want to know about",validators=[FileRequired()])
+    submit = SubmitField('Submit')
+
+class CollectionCreateForm(FlaskForm):
+    name = StringField('Collection Name',validators=[Required()])
+    article_picks = SelectMultipleField('Articles to include')
+    submit = SubmitField("Create Collection")
+
 
 
 #######################
@@ -147,8 +260,48 @@ def index():
             similarity = face_detect(full_filename1,full_filename2)
             if similarity == "0":
                 flash("You did not pass the validation. Try a different picture")
+            else:
+                login_user(check_user)
             return render_template("login_success.html",target_image=full_filename1, source_image = full_filename2, similarity = similarity)
     return render_template("index.html", form = form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out')
+    return redirect(url_for('index'))
+
+@app.route('/secret')
+@login_required
+def secret():
+    return "Only authenticated users can do this! Try to log in or contact the site admin."
+
+@app.route('/search', methods=['GET', 'POST'])
+@login_required
+def search():
+    form = SearchForm()
+    if form.validate_on_submit():
+        get_or_create_search(db.session, form.search.data)
+    return render_template("search.html", form=form)
+
+
+@app.route('/create_article_collection',methods=["GET","POST"])
+@login_required
+def create_playlist():
+    form = CollectionCreateForm()
+    choices = []
+    for a in Article.query.all():
+        choices.append((a.id, a.title))
+    form.article_picks.choices = choices
+    if request.method == 'POST':
+        articles_selected = form.article_picks.data # list?
+        print("ARTICLES SELECTED", articles_selected)
+        article_objects = [get_article_by_id(int(id)) for id in articles_selected]
+        print("ARTICLES RETURNED", article_objects)
+        get_or_create_personal_collection(db.session,current_user=current_user,name=form.name.data,article_list=article_objects) # How to access user, here and elsewhere TODO
+        return "Collection made"
+    return render_template('create_article_collection.html',form=form)
 
 @app.route('/addUser', methods=['GET', 'POST'])
 def add_users():
@@ -190,7 +343,7 @@ def upload_file():
         f.save(secure_filename(f.filename))
         return 'file uploaded successfully'
 
-#For checking if file upload is succesful
+#For checking if file upload is successful
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'],

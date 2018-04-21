@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>Login Success</h1>
+<h1>Login Result</h1>
 
 
 <p style="
@@ -29,7 +29,7 @@ margin-left:  10px;
 <li style="
     clear:  both;
     padding: 20px;
-    ">passeded with <strong>{{similarity}}%</strong>similarity</li>
+    "><strong>{{similarity}}%</strong>similarity</li>
 <div>
     {% for message in get_flashed_messages() %}
     {{ message }}

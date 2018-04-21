@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
+{% if current_user.is_authenticated %}
+
+<h1 >you are signed in</h1>
+{% else %}
 <h1>Home/Login</h1>
 
 
@@ -11,8 +16,11 @@
     {{ form.submit() }}<br>
 </form>
 
-    If you do do not have an account
-    <a href="{{ url_for('add_users') }}">Register</a><br>
+If you do do not have an account
+<a href="{{ url_for('add_users') }}">Register</a><br>
+{% endif %}
+
+
 
 
 <div>

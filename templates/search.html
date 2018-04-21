@@ -1,0 +1,23 @@
+
+{% extends 'base.html' %}
+
+
+{% block content %}
+<h1>Search</h1>
+
+
+<form action="" method="POST" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    {{ form.search.label }} {{ form.search() }}<br>
+    {{ form.submit() }}<br>
+</form>
+
+<div>
+    {% for message in get_flashed_messages() %}
+    <li>{{ message }}</li>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+
