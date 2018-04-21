@@ -35,6 +35,30 @@
     {% endfor %}
 </ul>
 
+<div id ="message">
+    {% for message in get_flashed_messages() %}
+    {{ message }}
+    {% endfor %}
+</div>
+
+
+<button onClick="runAJAX()">Ajax list of Collections</button>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+<script>
+    function runAJAX () {
+        $.ajax({
+               url: "/ajax",
+               dataType: "json"
+               }).done(function( data ) {
+                       $.each(data.collection, function(index, value) {
+                              $("<p>"+ value.name + "</p>").appendTo($('div[id=message]'))
+                              });
+                       });
+    }
+</script>
+
 {% if not all_collections %}
 There are no collections to show.
 {% endif %}

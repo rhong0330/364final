@@ -26,4 +26,9 @@
     There are no users to show.
 {% endif %}
 
+<div>
+    {% for message in get_flashed_messages() %}
+    {{ message }}
+    {% endfor %}
+</div>
 {% endblock %}

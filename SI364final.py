@@ -4,7 +4,7 @@ import requests
 import json
 import boto3
 import flask
-from flask import Flask, render_template, session, redirect, url_for, flash, request, send_from_directory
+from flask import jsonify, Flask, render_template, session, redirect, url_for, flash, request, send_from_directory
 from flask_script import Manager, Shell
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired
@@ -117,9 +117,9 @@ def get_article_by_id(id):
 def get_or_create_search(db_session, f):
     filename = f.filename
     searchTerm = db_session.query(Search).filter_by(term=filename).first()
+    
     if searchTerm:
         print("Found term")
-        return searchTerm
     else:
         print("Added term")
         full_filename = os.path.join(app.config['UPLOAD_FOLDER'],secure_filename(filename))
@@ -127,13 +127,13 @@ def get_or_create_search(db_session, f):
         result_list = image_detect(full_filename)
         searchTerm = Search(term=filename)
         for label in result_list:
-            output = label['Name'] + " : " + str(label['Confidence']) + "%\n"
-            flash (output)
+            
             result = get_or_create_result(db_session, filename, label['Name'], str(label['Confidence']))
             searchTerm.results.append(result)
         db_session.add(searchTerm)
         db_session.commit()
-        return searchTerm
+    return searchTerm.results
+
 
 def get_or_create_result(db_session, term_in, key_in, value_in):
     result = db_session.query(Result).filter_by(term = term_in, key = key_in, value = value_in).first()
@@ -296,8 +296,14 @@ def logout():
 def search():
     form = SearchForm()
     if form.validate_on_submit():
-        get_or_create_search(db.session, form.search.data)
+        results = get_or_create_search(db.session, form.search.data)
+        for result in results:
+            data = {}
+            data['name'] = result.key
+            data['confidence'] = result.value
+            print(json.dumps(data))
     return render_template("search.html", form=form)
+
 
 @app.route('/update', methods=['GET', 'POST'])
 @login_required
@@ -338,11 +344,20 @@ def all_collections():
     form = DeleteButtonForm()
     all_collections = [] # To be tuple list of title, genre
     collections = PersonalCollection.query.all()
-    print (collections)
     for s in collections:
         collect_user = db.session.query(User).filter_by(id=s.user_id).first()
         all_collections.append((collect_user.user,s.name))
     return render_template('all_collections.html',all_collections=all_collections, form=form)
+
+@app.route('/ajax')
+def collection_search():
+    collections = PersonalCollection.query.all()
+    cols = []
+    for s in collections:
+        collect_user = db.session.query(User).filter_by(id=s.user_id).first()
+        cols.append(s.name)
+    x = jsonify({"collection" : [{'name' : col} for col in cols]})
+    return x
 
 @app.route('/delete/<lst>',methods=["GET","POST"])
 def delete(lst):
