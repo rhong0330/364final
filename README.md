@@ -39,7 +39,8 @@ $ sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
 *https://docs.aws.amazon.com/cli/latest/userguide/cli-environment.html*
 
 6. **export following to the terminal**
-export settings not for public
+
+export settings not for public. I sent the export settings to the email.
 
 *currently on the free trial on Amazon Rekognition but these keys will be unavailable once the project is graded for it's paid*
 
