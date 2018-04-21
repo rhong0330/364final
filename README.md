@@ -123,15 +123,15 @@ http://localhost:5000/uploads/<filename> , For checking if file upload is succes
 
 - [*] At least one WTForm that sends data with a `GET` request to a *new* page.
 
-- [] At least one WTForm that sends data with a `POST` request to the *same* page. (NOT counting the login or registration forms provided for you in class.)
+- [*] At least one WTForm that sends data with a `POST` request to the *same* page. (NOT counting the login or registration forms provided for you in class.)
 
 - [*] At least one WTForm that sends data with a `POST` request to a *new* page. (NOT counting the login or registration forms provided for you in class.)
 
-- [ ] At least two custom validators for a field in a WTForm, NOT counting the custom validators included in the log in/auth code.
+- [*] At least two custom validators for a field in a WTForm, NOT counting the custom validators included in the log in/auth code.
 
-- [ ] Include at least one way to *update* items saved in the database in the application (like in HW5).
+- [*] Include at least one way to *update* items saved in the database in the application (like in HW5).
 
-- [ ] Include at least one way to *delete* items saved in the database in the application (also like in HW5).
+- [*] Include at least one way to *delete* items saved in the database in the application (also like in HW5).
 
 - [*] Include at least one use of `redirect`.
 

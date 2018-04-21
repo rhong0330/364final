@@ -1,0 +1,23 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% if current_user.is_authenticated %}
+<form action="" method="POST" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    {{ form.new_face.label }} {{ form.new_face() }}<br>
+    {{ form.submit() }}<br>
+</form>
+{% endif %}
+
+
+
+
+<div>
+    {% for message in get_flashed_messages() %}
+    {{ message }}
+    {% endfor %}
+</div>
+
+{% endblock %}

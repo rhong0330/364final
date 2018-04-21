@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Create New Collection</h1>
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+    {{ form.name.label }} {{ form.name() }}
+    {{ form.search_picks.label }} {{ form.search_picks() }}
+    {{ form.submit.label }}{{ form.submit() }}
+</form>
+
+
+{% endblock %}

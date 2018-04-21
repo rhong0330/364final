@@ -1,0 +1,42 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+<ul style = "list-style:none;">
+    {% for nm in all_collections %}
+    <div style="
+        border: 2px solid #000;
+        width: 300px;
+        padding: 30px;
+        background: #fffaf2;
+        margin-bottom: 20px;
+        ">
+        <li><p style="
+            width: 300px;
+            display:  inline-block;
+            text-align:  center;
+            ">{{nm[0]}}</p></li>
+        <li><p style="
+            width: 300px;
+            display:  inline-block;
+            text-align:  center;
+            ">{{nm[1]}}</p></li>
+        
+        <li><form method="POST" action="/delete/{{ nm[1] }}"
+            style="
+            width: 300px;
+            display:  inline-block;
+            text-align:  center;
+            ">
+            {{ form.submit() }}
+        </form></li>
+    </div>
+    
+    {% endfor %}
+</ul>
+
+{% if not all_collections %}
+There are no collections to show.
+{% endif %}
+
+{% endblock %}

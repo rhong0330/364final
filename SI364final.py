@@ -80,6 +80,10 @@ def create_user(db_session, user_in, face_in):
     db_session.commit()
     return new_user
 
+def update_user(db_session, face_in):
+    
+    return update_user
+
 def face_detect(imageFile1, imageFile2):
     sourceFile= open(imageFile1, 'rb')
     targetFile= open(imageFile2, 'rb')
@@ -141,17 +145,19 @@ def get_or_create_result(db_session, term_in, key_in, value_in):
         db_session.commit()
         return result
 
-def get_or_create_personal_collection(db_session, name, article_list, current_user):
-    articleCollection = db_session.query(PersonalCollection).filter_by(name=name,user_id=current_user.id).first()
-    if articleCollection:
-        return articleCollection
-    else:
-        articleCollection = PersonalCollection(name=name,user_id=current_user.id,articles=[])
-        for a in article_list:
-            articleCollection.articles.append(a)
-        db_session.add(articleCollection)
-        db_session.commit()
-        return articleCollection
+def get_or_create_personal_collection(db_session, name, search_list, current_user):
+    searchCollection = PersonalCollection(name = name,user_id=current_user.id,searches=[])
+    for a in search_list:
+        searchCollection.searches.append(a)
+    db_session.add(searchCollection)
+    db_session.commit()
+    return searchCollection
+
+
+def get_search_by_id(id):
+    """returns article or None"""
+    search_obj = Search.query.filter_by(id=id).first()
+    return search_obj
 
 ##################
 ##### MODELS #####
@@ -160,25 +166,32 @@ def get_or_create_personal_collection(db_session, name, article_list, current_us
 # Set up association Table between Articles and collections prepared by user
 tags = db.Table('tags',db.Column('search_id',db.Integer, db.ForeignKey('search.id')),db.Column('result_id',db.Integer, db.ForeignKey('results.id')))
 
-user_collection = db.Table('user_collection',db.Column('user_id', db.Integer, db.ForeignKey('results.id')),db.Column('collection_id',db.Integer, db.ForeignKey('personalCollections.id')))
+user_collection = db.Table('user_collection',db.Column('user_id', db.Integer, db.ForeignKey('search.id')),db.Column('collection_id',db.Integer, db.ForeignKey('personalCollections.id')))
 
 
 class User(UserMixin, db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer,primary_key=True)
     user = db.Column(db.String(256), unique=True)
+    def validate_user(form, field):
+        if len(field.data) > 256:
+            raise ValidationError('Name must be less than 256 characters')
     face = db.Column(db.String(256), unique=True)
+    def validate_face(form, field):
+        if len(field.data) > 256:
+            raise ValidationError('Name must be less than 256 characters')
     collection = db.relationship('PersonalCollection', backref='User')
     #pin = db.Column(db.Integer)
     def __repr__(self):
         return "{} {}".format(self.id, self.user)
 
+
 class PersonalCollection(db.Model):
     __tablename__ = "personalCollections"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255))
+    name = db.Column(db.String(256), unique=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    results = db.relationship('Result',secondary=user_collection,backref=db.backref('personalCollections',lazy='dynamic'),lazy='dynamic')
+    searches = db.relationship('Search',secondary=user_collection,backref=db.backref('personalCollections',lazy='dynamic'),lazy='dynamic')
 
 class Result(db.Model):
     __tablename__ = "results"
@@ -218,12 +231,17 @@ class SearchForm(FlaskForm):
     search = FileField("Insert a photo you want to know about",validators=[FileRequired()])
     submit = SubmitField('Submit')
 
+class UpdateForm(FlaskForm):
+    new_face = FileField("Insert a photo of a new face", validators=[FileRequired()])
+    submit = SubmitField()
+
 class CollectionCreateForm(FlaskForm):
     name = StringField('Collection Name',validators=[Required()])
-    article_picks = SelectMultipleField('Articles to include')
+    search_picks = SelectMultipleField('Searches to include')
     submit = SubmitField("Create Collection")
 
-
+class DeleteButtonForm(FlaskForm):
+    submit = SubmitField("Delete")
 
 #######################
 ###### VIEW FXNS ######
@@ -272,10 +290,6 @@ def logout():
     flash('You have been logged out')
     return redirect(url_for('index'))
 
-@app.route('/secret')
-@login_required
-def secret():
-    return "Only authenticated users can do this! Try to log in or contact the site admin."
 
 @app.route('/search', methods=['GET', 'POST'])
 @login_required
@@ -285,23 +299,58 @@ def search():
         get_or_create_search(db.session, form.search.data)
     return render_template("search.html", form=form)
 
-
-@app.route('/create_article_collection',methods=["GET","POST"])
+@app.route('/update', methods=['GET', 'POST'])
 @login_required
-def create_playlist():
+def update():
+    form = UpdateForm()
+    if form.validate_on_submit():
+        f = form.new_face.data
+        update_user = db.session.query(User).filter_by(user=current_user.user).first()
+        filename = f.filename
+        full_filename = os.path.join(app.config['UPLOAD_FOLDER'],secure_filename(filename))
+        f.save(full_filename)
+        update_user.face = filename
+        db.session.add(update_user)
+        db.session.commit()
+        return redirect(url_for('register_success', full_filename = full_filename))
+    return render_template("update.html", form=form)
+
+@app.route('/create_search_collection',methods=["GET","POST"])
+@login_required
+def create_searchlist():
     form = CollectionCreateForm()
     choices = []
-    for a in Article.query.all():
-        choices.append((a.id, a.title))
-    form.article_picks.choices = choices
+    for a in Search.query.all():
+        choices.append((a.id, a.term))
+    form.search_picks.choices = choices
     if request.method == 'POST':
-        articles_selected = form.article_picks.data # list?
-        print("ARTICLES SELECTED", articles_selected)
-        article_objects = [get_article_by_id(int(id)) for id in articles_selected]
-        print("ARTICLES RETURNED", article_objects)
-        get_or_create_personal_collection(db.session,current_user=current_user,name=form.name.data,article_list=article_objects) # How to access user, here and elsewhere TODO
-        return "Collection made"
-    return render_template('create_article_collection.html',form=form)
+        search_selected = form.search_picks.data # list?
+        print("SELECTED", search_selected)
+        search_objects = [get_search_by_id(int(id)) for id in search_selected]
+        print("RETURNED", search_objects)
+        get_or_create_personal_collection(db.session,name=form.name.data,current_user=current_user,search_list=search_objects) # How to access user, here and elsewhere TODO
+        return redirect(url_for('all_collections'))
+    return render_template('create_search_collection.html',form=form)
+
+@app.route('/view_collection',methods=["GET","POST"])
+@login_required
+def all_collections():
+    form = DeleteButtonForm()
+    all_collections = [] # To be tuple list of title, genre
+    collections = PersonalCollection.query.all()
+    print (collections)
+    for s in collections:
+        collect_user = db.session.query(User).filter_by(id=s.user_id).first()
+        all_collections.append((collect_user.user,s.name))
+    return render_template('all_collections.html',all_collections=all_collections, form=form)
+
+@app.route('/delete/<lst>',methods=["GET","POST"])
+def delete(lst):
+    tobedeleted = PersonalCollection.query.filter_by(name=lst).first()
+    db.session.delete(tobedeleted)
+    db.session.commit()
+    flash('Deleted list {}'.format(tobedeleted.name))
+    return redirect(url_for('all_collections'))
 
 @app.route('/addUser', methods=['GET', 'POST'])
 def add_users():
@@ -349,7 +398,11 @@ def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'],
                                filename)
 
-
+#For checking if user is logged in
+@app.route('/secret')
+@login_required
+def secret():
+    return "Only authenticated users can do this! Try to log in or contact the site admin."
 
 ## Code to run the application...
 
